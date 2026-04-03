@@ -2,9 +2,19 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import type { SectionProps } from "@/types"
 
+const HERO_IMAGE = "https://cdn.poehali.dev/projects/4c6632cc-81fc-4454-b152-35adcbcad815/files/7262d15a-4834-4834-ab8f-7ab2f2cbc57a.jpg"
+
 export default function Section({ id, title, subtitle, content, isActive, showButton, buttonText }: SectionProps) {
   return (
-    <section id={id} className="relative h-screen w-full snap-start flex flex-col justify-center p-8 md:p-16 lg:p-24">
+    <section
+      id={id}
+      className="relative h-screen w-full snap-start flex flex-col justify-center p-8 md:p-16 lg:p-24"
+      style={id === 'hero' ? {
+        backgroundImage: `linear-gradient(to right, rgba(10,6,18,0.95) 40%, rgba(10,6,18,0.6) 100%), url(${HERO_IMAGE})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      } : {}}
+    >
       {subtitle && (
         <motion.div
           className="mb-12"
@@ -43,7 +53,7 @@ export default function Section({ id, title, subtitle, content, isActive, showBu
           <Button
             variant="outline"
             size="lg"
-            className="text-[#FF4D00] bg-transparent border-[#FF4D00] hover:bg-[#FF4D00] hover:text-black transition-colors"
+            className="text-[#C084FC] bg-transparent border-[#C084FC] hover:bg-[#C084FC] hover:text-black transition-colors"
           >
             {buttonText}
           </Button>
