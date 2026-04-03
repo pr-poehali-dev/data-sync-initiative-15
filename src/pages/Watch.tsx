@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import Icon from '@/components/ui/icon'
+import { useAniStore, addCoins, setBookmark, removeBookmark } from '@/store/aniStore'
 
 const ANIME_DATA: Record<string, { title: string; genre: string; episode: number; total: number; image: string }> = {
   '1': { title: 'Тёмный Клинок', genre: 'Фэнтези', episode: 12, total: 24, image: 'https://cdn.poehali.dev/projects/4c6632cc-81fc-4454-b152-35adcbcad815/files/de962cc5-c144-4444-9311-11ead62f7421.jpg' },
@@ -50,9 +51,37 @@ export default function Watch() {
   const [quality, setQuality] = useState(QUALITIES[0])
   const [showSettings, setShowSettings] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [coinToast, setCoinToast] = useState<string | null>(null)
+  const { coins, bookmarks } = useAniStore()
+  const isBookmarked = !!bookmarks[id || '1']
   const playerRef = useRef<HTMLDivElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const msgId = useRef(100)
+  const watchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const showCoinToast = (msg: string) => {
+    setCoinToast(msg)
+    setTimeout(() => setCoinToast(null), 2000)
+  }
+
+  // Начисляем 10 коинов каждые 30 секунд просмотра
+  useEffect(() => {
+    watchTimerRef.current = setInterval(() => {
+      addCoins(10)
+      showCoinToast('+10 🪙 за просмотр!')
+    }, 30000)
+    return () => { if (watchTimerRef.current) clearInterval(watchTimerRef.current) }
+  }, [])
+
+  const toggleBookmark = () => {
+    if (isBookmarked) {
+      removeBookmark(id || '1')
+    } else {
+      setBookmark(id || '1', anime.title, currentEp, anime.image)
+      addCoins(5)
+      showCoinToast('+5 🪙 закладка сохранена!')
+    }
+  }
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -116,6 +145,13 @@ export default function Watch() {
   return (
     <div className="h-screen bg-[#0a0612] text-white flex flex-col overflow-hidden">
 
+      {/* Coin toast */}
+      {coinToast && (
+        <div className="fixed top-16 right-5 z-50 bg-[#1a0e33] border border-[#C084FC]/40 text-white px-4 py-2.5 rounded-xl shadow-2xl text-sm font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-right-3">
+          {coinToast}
+        </div>
+      )}
+
       {/* Navbar */}
       <div className="shrink-0 bg-[#0a0612]/95 backdrop-blur-md border-b border-[#2d1f4a] px-5 py-2.5 z-30">
         <div className="flex items-center justify-between">
@@ -129,7 +165,21 @@ export default function Watch() {
               <span>Серия {currentEp}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/shop')}
+              className="flex items-center gap-1.5 bg-[#1a0e33] hover:bg-[#2d1f4a] border border-[#3d2060] rounded-xl px-3 py-1.5 transition-colors"
+            >
+              <span className="text-base">🪙</span>
+              <span className="font-bold text-[#C084FC] text-sm tabular-nums">{coins.toLocaleString()}</span>
+            </button>
+            <button
+              onClick={toggleBookmark}
+              title={isBookmarked ? 'Убрать закладку' : 'Добавить закладку'}
+              className={`p-1.5 rounded-xl border transition-all ${isBookmarked ? 'bg-[#C084FC]/20 border-[#C084FC]/50 text-[#C084FC]' : 'border-[#3d2060] text-gray-400 hover:text-[#C084FC] hover:border-[#C084FC]/40'}`}
+            >
+              <Icon name={isBookmarked ? 'BookmarkCheck' : 'Bookmark'} size={18} />
+            </button>
             <Badge className="bg-red-600/20 text-red-400 border border-red-600/30 text-xs">
               🔴 {viewers.toLocaleString()} зрителей
             </Badge>

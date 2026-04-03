@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
+import { useAniStore } from '@/store/aniStore'
 
 const IMG = {
   fantasy: 'https://cdn.poehali.dev/projects/4c6632cc-81fc-4454-b152-35adcbcad815/files/de962cc5-c144-4444-9311-11ead62f7421.jpg',
@@ -54,6 +55,7 @@ export default function Catalog() {
   const [sort, setSort] = useState('rating')
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const navigate = useNavigate()
+  const { coins, bookmarks } = useAniStore()
 
   const filtered = ANIME_LIST
     .filter(a => {
@@ -97,7 +99,22 @@ export default function Catalog() {
               </button>
             )}
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 items-center">
+            <button
+              onClick={() => navigate('/shop')}
+              className="flex items-center gap-1.5 bg-[#1a0e33] hover:bg-[#2d1f4a] border border-[#3d2060] rounded-xl px-3 py-1.5 transition-colors"
+            >
+              <span className="text-base">🪙</span>
+              <span className="font-bold text-[#C084FC] text-sm tabular-nums">{coins.toLocaleString()}</span>
+            </button>
+            {Object.keys(bookmarks).length > 0 && (
+              <button onClick={() => navigate('/shop')} className="relative p-1.5 text-gray-400 hover:text-[#C084FC] transition-colors">
+                <Icon name="Bookmark" size={18} />
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#C084FC] text-black text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {Object.keys(bookmarks).length}
+                </span>
+              </button>
+            )}
             <Button onClick={() => navigate('/cards')} variant="ghost" className="text-gray-300 hover:text-white hidden sm:flex">
               🎴 Карты
             </Button>
