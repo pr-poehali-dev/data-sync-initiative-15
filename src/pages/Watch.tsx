@@ -23,8 +23,9 @@ const BOT_MESSAGES = [
 ]
 
 const REACTIONS = ['🔥', '😱', '❤️', '😂', '👏', '💜', '😤', '🤯']
-
 const QUICK_PHRASES = ['ВАУ!', 'Огонь 🔥', 'Не ожидал!', 'Топ серия!', '+1', '❤️']
+const VOICES = ['Русская (AniLibria)', 'Русская (Crunchyroll)', 'Русская (субтитры)', 'Оригинал (японский)', 'Английская']
+const QUALITIES = ['1080p Ultra HD', '720p HD', '480p SD', '360p']
 
 export default function Watch() {
   const { id } = useParams<{ id: string }>()
@@ -45,8 +46,29 @@ export default function Watch() {
   const [showEmoji, setShowEmoji] = useState(false)
   const [currentEp, setCurrentEp] = useState(anime.episode)
   const [chatTab, setChatTab] = useState<'chat' | 'episodes'>('chat')
+  const [voice, setVoice] = useState(VOICES[0])
+  const [quality, setQuality] = useState(QUALITIES[0])
+  const [showSettings, setShowSettings] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const playerRef = useRef<HTMLDivElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const msgId = useRef(100)
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      playerRef.current?.requestFullscreen()
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullscreen(false)
+    }
+  }
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -125,7 +147,7 @@ export default function Watch() {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Video player */}
-          <div className="relative bg-black group" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 160px)' }}>
+          <div ref={playerRef} className="relative bg-black group" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 160px)' }}>
             <img src={anime.image} alt={anime.title} className="w-full h-full object-cover" />
 
             {/* Reaction overlay */}
@@ -134,6 +156,38 @@ export default function Watch() {
                 <span className="text-9xl drop-shadow-2xl" style={{ animation: 'bounceUp 1.2s ease-out forwards' }}>
                   {reaction}
                 </span>
+              </div>
+            )}
+
+            {/* Settings panel */}
+            {showSettings && (
+              <div className="absolute bottom-20 right-4 z-30 bg-[#0c0818]/97 backdrop-blur-md border border-[#3d2060] rounded-2xl p-4 w-72 shadow-2xl">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-white">Настройки</p>
+                  <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white">
+                    <Icon name="X" size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">🎙 Озвучка</p>
+                <div className="space-y-0.5 mb-4">
+                  {VOICES.map(v => (
+                    <button key={v} onClick={() => setVoice(v)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between ${voice === v ? 'bg-[#C084FC]/20 text-[#C084FC]' : 'text-gray-300 hover:bg-[#1a0e33] hover:text-white'}`}
+                    >
+                      {v} {voice === v && <Icon name="Check" size={13} />}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">📺 Качество</p>
+                <div className="space-y-0.5">
+                  {QUALITIES.map(q => (
+                    <button key={q} onClick={() => setQuality(q)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between ${quality === q ? 'bg-[#C084FC]/20 text-[#C084FC]' : 'text-gray-300 hover:bg-[#1a0e33] hover:text-white'}`}
+                    >
+                      {q} {quality === q && <Icon name="Check" size={13} />}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -148,31 +202,49 @@ export default function Watch() {
             </div>
 
             {/* Bottom controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent px-5 py-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* Progress bar */}
-              <div className="w-full h-1 bg-white/20 rounded-full mb-3 cursor-pointer">
-                <div className="h-full bg-[#C084FC] rounded-full" style={{ width: '42%' }} />
+              <div className="w-full h-1.5 bg-white/20 rounded-full mb-3 cursor-pointer group/bar hover:h-2.5 transition-all">
+                <div className="h-full bg-[#C084FC] rounded-full relative" style={{ width: '42%' }}>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/bar:opacity-100 transition-opacity" />
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
                   <button onClick={() => setIsPlaying(!isPlaying)} className="text-white hover:text-[#C084FC] transition-colors">
                     <Icon name={isPlaying ? 'Pause' : 'Play'} size={20} />
                   </button>
-                  <button className="text-white hover:text-[#C084FC] transition-colors">
+                  <button onClick={() => setCurrentEp(e => Math.min(e + 1, anime.total))} className="text-white hover:text-[#C084FC] transition-colors">
                     <Icon name="SkipForward" size={18} />
                   </button>
-                  <span className="text-xs text-gray-300">18:24 / 24:00</span>
-                  <span className="text-xs text-gray-500 hidden sm:block">Серия {currentEp} из {anime.total}</span>
-                </div>
-                <div className="flex items-center gap-2">
                   <button className="text-white hover:text-[#C084FC] transition-colors">
                     <Icon name="Volume2" size={18} />
                   </button>
-                  <button className="text-white hover:text-[#C084FC] transition-colors">
-                    <Icon name="Settings" size={16} />
+                  <span className="text-xs text-gray-300 tabular-nums">18:24 / 24:00</span>
+                  <span className="text-xs text-gray-500 hidden md:block">· Серия {currentEp}/{anime.total}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setShowSettings(s => !s)}
+                    className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-xs text-gray-200"
+                  >
+                    <Icon name="Mic2" size={11} />
+                    <span className="max-w-[80px] truncate">{voice.split('(')[0].trim()}</span>
                   </button>
-                  <button className="text-white hover:text-[#C084FC] transition-colors">
-                    <Icon name="Maximize" size={16} />
+                  <button onClick={() => setShowSettings(s => !s)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-xs text-gray-200"
+                  >
+                    <Icon name="Tv2" size={11} />
+                    {quality.split(' ')[0]}
+                  </button>
+                  <button onClick={() => setShowSettings(s => !s)}
+                    className={`p-1.5 rounded-md transition-colors ${showSettings ? 'bg-[#C084FC]/30 text-[#C084FC]' : 'text-white hover:bg-white/10'}`}
+                  >
+                    <Icon name="Settings" size={15} />
+                  </button>
+                  <button onClick={toggleFullscreen}
+                    className="p-1.5 rounded-md text-white hover:bg-white/10 hover:text-[#C084FC] transition-colors"
+                  >
+                    <Icon name={isFullscreen ? 'Minimize' : 'Maximize'} size={15} />
                   </button>
                 </div>
               </div>
